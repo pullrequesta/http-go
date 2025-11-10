@@ -1,0 +1,48 @@
+func getLinesChannel(f io.ReadCloser) <-chan string {
+	ch := make(chan string)
+	line := ""
+	data := make([]byte, bufferSize)
+
+	go func() {
+		defer close(ch)
+		for {
+			n, err := f.Read(data)
+			if err == io.EOF {
+				break
+			}
+			data := data[:n]
+			if idx := bytes.Index(data, []byte("\n")); idx != -1 {
+				line += string(data[:idx])
+				// fmt.Printf("%s\n", line)
+				ch <- line
+				line = ""
+				data = data[idx+1:]
+
+			}
+
+			line += string(data)
+		}
+		if err := f.Close(); err != nil {
+			fmt.Println(err.Error())
+		}
+		ch <- line
+
+	}()
+
+	return ch
+
+}
+func main() {
+
+	f, err := os.Open("./messages.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ch := getLinesChannel(f)
+
+	for line := range ch {
+		fmt.Printf("read: %s\n", string(line))
+	}
+
+}
