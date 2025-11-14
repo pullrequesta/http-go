@@ -17,12 +17,6 @@ func NewHeaders() Headers {
 	}
 }
 
-// Define the header struct for the header-lines / field-lines for Http messsage
-type Header struct {
-	Name  string
-	Value string
-}
-
 func (h Headers) Parse(data []byte) (int, bool, error) {
 	if len(data) == 0 {
 		return 0, false, errors.New("empty request line")
@@ -31,22 +25,18 @@ func (h Headers) Parse(data []byte) (int, bool, error) {
 	done := false
 
 	for !done {
-		n, done, err := h.parseHeaderLine(string(data))
+		var n int
+		var err error
+		n, done, err = h.parseHeaderLine(string(data))
 		if err != nil {
 			return 0, done, err
 		}
 		totalN += n
-		if n == 0 {
-			return totalN, done, nil
-		}
 		data = data[n:]
-		if len(data) == 0 {
-			return totalN, done, nil
-		}
-		if done {
+
+		if n == 0 || len(data) == 0 {
 			break
 		}
-
 	}
 	return totalN, done, nil
 }

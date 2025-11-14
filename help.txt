@@ -46,3 +46,23 @@ func main() {
 	}
 
 }
+
+
+		if n == 0 {
+			// end of headers
+			// consume \r\n
+			if r.State != parseBodyState {
+				break
+			}
+			n = len(crlf)
+			contentLengthStr := r.Headers.Get("Content-Length")
+			if contentLengthStr == "" {
+				r.State = doneState
+				return len(data), nil
+			}
+			contentLen, err := strconv.Atoi(contentLengthStr)
+			if err != nil {
+				return 0, errors.New("invalid content-length received")
+			}
+			r.ContentLength = contentLen
+		}
