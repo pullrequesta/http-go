@@ -41,14 +41,14 @@ func main() {
 
 		r := MUST(request.RequestFromReader(conn))
 		// if err != nil {
-		// 	log.Printf("error: %s\n", err.Error())
+		// 	log.Println("Error parsing request:", err)
 		// }
 		fmt.Printf("Request line:\n")
 		fmt.Printf("- Method: %s\n", r.RequestLine.Method)
 		fmt.Printf("- Target: %s\n", r.RequestLine.RequestTarget)
 		fmt.Printf("- Version: %s\n", r.RequestLine.HttpVersion)
 		fmt.Printf("Headers:\n")
-		for key, val := range r.Headers.Headers {
+		for key, val := range r.Headers.HeadersMap {
 			fmt.Println("-", key, ":", val)
 		}
 		fmt.Printf("- Body: %s\n", string(r.Body))

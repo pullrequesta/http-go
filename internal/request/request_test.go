@@ -51,8 +51,8 @@ func TestRequestLineWithHeadersAndBody(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host":           "host:420",
 						"Content-Length": "13",
 					},
@@ -77,8 +77,8 @@ func TestRequestLineWithHeadersAndBody(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host":           "host:420",
 						"Content-Length": "0",
 					},
@@ -102,8 +102,8 @@ func TestRequestLineWithHeadersAndBody(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host": "host:420",
 					},
 				},
@@ -125,8 +125,8 @@ func TestRequestLineWithHeadersAndBody(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host": "host:420",
 					},
 				},
@@ -207,8 +207,8 @@ func TestRequestWithHeaders(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host": "localhost:42069,localhost:42069",
 					},
 				},
@@ -226,8 +226,8 @@ func TestRequestWithHeaders(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host":       "localhost:42069",
 						"User-Agent": "curl/7.81.0",
 						"Accept":     "*/*",
@@ -243,8 +243,8 @@ func TestRequestWithHeaders(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NotNil(t, r)
 
-			for key := range tc.expected.Headers.Headers {
-				assert.Equal(t, tc.expected.Headers.Headers[key], r.Headers.Get(key))
+			for key := range tc.expected.Headers.HeadersMap {
+				assert.Equal(t, tc.expected.Headers.HeadersMap[key], r.Headers.Get(key))
 			}
 			assert.Equal(t, tc.expected.RequestLine.Method, r.RequestLine.Method)
 			assert.Equal(t, tc.expected.RequestLine.RequestTarget, r.RequestLine.RequestTarget)
@@ -271,8 +271,8 @@ func TestRequestWithHeadersReturnsError(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host": "localhost:42069",
 					},
 				},
@@ -290,8 +290,8 @@ func TestRequestWithHeadersReturnsError(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host": "localhost:42069",
 					},
 				},
@@ -309,8 +309,8 @@ func TestRequestWithHeadersReturnsError(t *testing.T) {
 					RequestTarget: "/",
 					HttpVersion:   "1.1",
 				},
-				Headers: headers.Headers{
-					Headers: map[string]string{
+				Headers: headers.HTTPHeaders{
+					HeadersMap: map[string]string{
 						"Host": "localhost:42069",
 					},
 				},

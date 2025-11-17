@@ -7,17 +7,17 @@ import (
 
 const crlf string = "\r\n"
 
-type Headers struct {
-	Headers map[string]string
+type HTTPHeaders struct {
+	HeadersMap map[string]string
 }
 
-func NewHeaders() Headers {
-	return Headers{
-		Headers: make(map[string]string),
+func NewHeaders() HTTPHeaders {
+	return HTTPHeaders{
+		HeadersMap: make(map[string]string),
 	}
 }
 
-func (h Headers) Parse(data []byte) (int, bool, error) {
+func (h HTTPHeaders) Parse(data []byte) (int, bool, error) {
 	if len(data) == 0 {
 		return 0, false, errors.New("empty request line")
 	}
@@ -70,13 +70,13 @@ func isTchar(c rune) bool {
 	}
 }
 
-func (h Headers) parseHeaderLine(s string) (n int, done bool, err error) {
-	if h.Headers == nil {
-		h.Headers = make(map[string]string)
+func (h HTTPHeaders) parseHeaderLine(s string) (n int, done bool, err error) {
+	if h.HeadersMap == nil {
+		h.HeadersMap = make(map[string]string)
 	}
 
 	if len(s) == 0 {
-		return 0, false, errors.New("empty header line")
+		return 0, false, errors.New("empty header line received")
 	}
 	idx := strings.Index(s, crlf)
 	if idx == -1 {
@@ -90,15 +90,15 @@ func (h Headers) parseHeaderLine(s string) (n int, done bool, err error) {
 
 	key, val, found := strings.Cut(string(s[:idx]), ":")
 	if !found || len(key) == 0 || !isToken(key) {
-		return 0, false, errors.New("malformed header")
+		return 0, false, errors.New("malformed header received")
 	}
 
 	key = strings.ToLower(key)
-	v, exists := h.Headers[key]
+	v, exists := h.HeadersMap[key]
 	if exists {
-		h.Headers[key] = v + "," + strings.TrimSpace(val)
+		h.HeadersMap[key] = v + "," + strings.TrimSpace(val)
 	} else {
-		h.Headers[key] = strings.TrimSpace(val)
+		h.HeadersMap[key] = strings.TrimSpace(val)
 
 	}
 
@@ -106,10 +106,14 @@ func (h Headers) parseHeaderLine(s string) (n int, done bool, err error) {
 
 }
 
-func (h Headers) Get(name string) string {
-	val, exists := h.Headers[strings.ToLower(name)]
+func (h HTTPHeaders) Get(name string) string {
+	val, exists := h.HeadersMap[strings.ToLower(name)]
 	if !exists {
 		return ""
 	}
 	return val
+}
+
+func (h HTTPHeaders) Set(name string, val string) {
+	h.HeadersMap[strings.ToLower(name)] = val
 }

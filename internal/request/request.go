@@ -26,7 +26,7 @@ const (
 // Define the request struct for Http message
 type Request struct {
 	RequestLine   RequestLine
-	Headers       headers.Headers
+	Headers       headers.HTTPHeaders
 	ContentLength int
 	Body          []byte
 	State         ParserState
@@ -46,7 +46,6 @@ type errReqLine struct {
 
 func (e *errReqLine) Error() string {
 	return "Err: " + e.Err.Error() + ", for value [" + e.Value + "]"
-
 }
 
 func NewRequest() *Request {
@@ -54,6 +53,10 @@ func NewRequest() *Request {
 		State:   initialState,
 		Headers: headers.NewHeaders(),
 	}
+}
+
+func (r *Request) GetHTTPVersion() string {
+	return r.RequestLine.HttpVersion
 }
 
 func RequestFromReader(reader io.Reader) (*Request, error) {
