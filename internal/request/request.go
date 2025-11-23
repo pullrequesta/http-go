@@ -9,11 +9,21 @@ import (
 	"unicode"
 )
 
+// see [rfc 9112 2.1 request-line](https://datatracker.ietf.org/doc/html/rfc9112#name-message-format)
+// HTTP-message   = start-line CRLF
+//
+//	*( field-line CRLF )
+//	CRLF
+//	[ message-body ]
+//
+// start-line     = request-line / status-line
+// field-line   = field-name ":" OWS field-value OWS
+// message-body = *OCTET
+
 const httpVersion string = "1.1"
 const crlf string = "\r\n"
 const bufferSize int = 1024
 
-// Define an enum-like type for parser state
 type ParserState int
 
 const (
@@ -23,7 +33,6 @@ const (
 	doneState                               // parser state for finishing the http message
 )
 
-// Define the request struct for Http message
 type Request struct {
 	RequestLine   RequestLine
 	Headers       headers.HTTPHeaders
@@ -32,7 +41,6 @@ type Request struct {
 	State         ParserState
 }
 
-// Define the request-line struct for Http message
 type RequestLine struct {
 	Method        string
 	RequestTarget string
@@ -140,6 +148,7 @@ func (r *Request) parse(data []byte) (int, error) {
 	return totalBytesParsed, nil
 
 }
+
 func (r *Request) parseSingle(data []byte) (int, error) {
 
 	switch r.State {
@@ -180,16 +189,27 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 		}
 
 		return len(data), nil
-
 	case doneState:
 		return 0, errors.New("trying to read data in a done state")
-
 	default:
 		return 0, errors.New("unknown state")
 
 	}
 }
 
+// see [rfc 9112 3.1 Request Line](https://datatracker.ietf.org/doc/html/rfc9112#name-message-format)
+// request-line   = method SP request-target SP HTTP-version
+// method         = token
+//
+//	request-target = origin-form
+//	               / absolute-form
+//	               / authority-form
+//	               / asterisk-form
+//
+// HTTP-name = %x48.54.54.50 ; HTTP
+//
+//	HTTP-version  = HTTP-name "/" DIGIT "." DIGIT
+//	HTTP-name     = %s"HTTP"
 func parseRequestLine(s string) (*RequestLine, int, error) {
 	if len(s) == 0 {
 		return nil, 0, errors.New("empty request line received")
@@ -226,6 +246,7 @@ func parseRequestLine(s string) (*RequestLine, int, error) {
 
 }
 
+// isMethod checks whether the given request method is case-sensitive.
 func isMethod(m string) bool {
 	for _, v := range m {
 		if !unicode.IsUpper(v) && unicode.IsLetter(v) {

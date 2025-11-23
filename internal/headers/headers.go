@@ -59,7 +59,7 @@ func isAlphaNumeric(c rune) bool {
 }
 
 // isTchar checks whether a given rune is tchar.
-// tchar are defined as a list of character except delimeter characters or alphanumeric characters
+// tchar are defined as a list of character except delimeter characters or alphanumeric characters.
 // see [rfc 9110 5.6.2. Tokens](https://www.rfc-editor.org/rfc/rfc9110.html#name-tokens)
 func isTchar(c rune) bool {
 	switch c {
@@ -70,6 +70,25 @@ func isTchar(c rune) bool {
 	}
 }
 
+// see [rfc 9112 5 field-line](https://datatracker.ietf.org/doc/html/rfc9112#name-message-format)
+// field-line   = field-name ":" OWS field-value OWS
+
+// see [rfc 9110 5.2 field-line](https://www.rfc-editor.org/rfc/rfc9110)
+// field-name     = token
+//   token          = 1*tchar
+
+//   tchar          = "!" / "#" / "$" / "%" / "&" / "'" / "*"
+//                  / "+" / "-" / "." / "^" / "_" / "`" / "|" / "~"
+//                  / DIGIT / ALPHA
+//                  ; any VCHAR, except delimiters
+
+// see [rfc 9110 5.5 field-value](https://www.rfc-editor.org/rfc/rfc9110)
+//
+//	field-value    = *field-content
+//	field-content  = field-vchar
+//	                 [ 1*( SP / HTAB / field-vchar ) field-vchar ]
+//	field-vchar    = VCHAR / obs-text
+//	obs-text       = %x80-FF
 func (h HTTPHeaders) parseHeaderLine(s string) (n int, done bool, err error) {
 	if h.HeadersMap == nil {
 		h.HeadersMap = make(map[string]string)

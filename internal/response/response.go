@@ -8,7 +8,6 @@ import (
 	"strconv"
 )
 
-// Define an enum-like type for status code
 type StatusCode int
 
 const (
@@ -31,6 +30,12 @@ func (w *Writer) Write(p []byte) (int, error) {
 	return w.Writer.Write(p)
 }
 
+// see [rfc 9112 4 status-line](https://datatracker.ietf.org/doc/html/rfc9112#name-message-format)
+// status-line = HTTP-version SP status-code SP [ reason-phrase ]
+// HTTP-version = HTTP-name "/" DIGIT "." DIGIT
+// HTTP-name = %x48.54.54.50 ; HTTP
+// status-code = 3DIGIT
+// reason-phrase = 1*( HTAB / SP / VCHAR / obs-text )
 func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 
 	var reasonPhrase string
