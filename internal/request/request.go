@@ -78,7 +78,6 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 			copy(newbuffer, buff)
 			buff = newbuffer
 		}
-		// parse from the buffer
 		numBytesParsed, err := r.parse(buff[:readToIndex])
 		if err != nil {
 			return nil, err
@@ -155,7 +154,6 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 		}
 		r.RequestLine = *reqLine
 		r.State = parseHeaderState
-		// fmt.Printf("number of bytes consumed by the request line: %d\n", n)
 		return n, nil
 	case parseHeaderState:
 		n, ok, err := r.Headers.Parse(data)
@@ -168,7 +166,6 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 			}
 			r.State = parseBodyState
 		}
-		// fmt.Printf("number of bytes consumed by the headers: %d\n", n)
 		return n, nil
 	case parseBodyState:
 		r.Body = append(r.Body, data...)
@@ -182,7 +179,6 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 			r.State = doneState
 		}
 
-		// fmt.Printf("number of bytes consumed by the body: %d\n", len(data))
 		return len(data), nil
 
 	case doneState:
@@ -211,7 +207,7 @@ func parseRequestLine(s string) (*RequestLine, int, error) {
 		return nil, consumedBytes, errors.New("invalid request line received")
 	}
 	method := parts[0]
-	if !isUpper(method) {
+	if !isMethod(method) {
 		return nil, consumedBytes, &errReqLine{Err: errors.New("invalid request method received"), Value: method}
 	}
 	version := parts[2]
@@ -230,8 +226,7 @@ func parseRequestLine(s string) (*RequestLine, int, error) {
 
 }
 
-func isUpper(m string) bool {
-
+func isMethod(m string) bool {
 	for _, v := range m {
 		if !unicode.IsUpper(v) && unicode.IsLetter(v) {
 			return false

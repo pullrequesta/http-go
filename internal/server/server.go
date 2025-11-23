@@ -102,7 +102,13 @@ func (s *Server) handleConn(rwc io.ReadWriteCloser) {
 
 	responseWriter := response.NewWriter(rwc)
 
-	//create a handler function to handle the error
+	// n, err := responseWriter.WriteChunkedBody([]byte("Welcome"))
+	// if err != nil {
+	// 	fmt.Printf("%v", err)
+	// }
+	// fmt.Println(n)
+
+	//create a handler function to write the response
 	s.handler(responseWriter, r)
 
 }

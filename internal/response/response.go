@@ -1,6 +1,8 @@
 package response
 
 import (
+	"bytes"
+	"fmt"
 	"httpfromtcp/internal/headers"
 	"io"
 	"strconv"
@@ -49,17 +51,6 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	return err
 
 }
-func GetDefaultHeaders(contentLen int) headers.HTTPHeaders {
-	hdr := headers.NewHeaders()
-
-	contentlength := strconv.Itoa(contentLen)
-	hdr.Set("Content-Length", contentlength)
-
-	hdr.Set("Connection", "close")
-	hdr.Set("Content-Type", "text/html")
-
-	return hdr
-}
 
 func (w *Writer) WriteHeaders(headers headers.HTTPHeaders) error {
 	hdrs := []byte{}
@@ -73,8 +64,40 @@ func (w *Writer) WriteHeaders(headers headers.HTTPHeaders) error {
 	return err
 
 }
-func (w *Writer) WriteBody(p []byte) (int, error) {
-	n, err := w.Write(p)
 
-	return n, err
+func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
+	var err error
+	trimmed, _ := bytes.CutSuffix(p, []byte("\n"))
+	chunkSize := fmt.Sprintf("%x\r\n", len(trimmed))
+	_, err = w.Write([]byte(chunkSize))
+	if err != nil {
+		return 0, err
+	}
+
+	chunkData := fmt.Sprintf("%s\r\n", trimmed)
+	var n int
+	n, err = w.Write([]byte(chunkData))
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
+
+}
+
+func (w *Writer) WriteChunkedBodyDone() (int, error) {
+	return w.Write([]byte("0\r\n\r\n"))
+
+}
+
+func GetDefaultHeaders(contentLen int) headers.HTTPHeaders {
+	hdr := headers.NewHeaders()
+
+	contentlength := strconv.Itoa(contentLen)
+	hdr.Set("Content-Length", contentlength)
+
+	hdr.Set("Connection", "close")
+	hdr.Set("Content-Type", "text/html")
+
+	return hdr
 }

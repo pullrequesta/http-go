@@ -1,12 +1,15 @@
 package main
 
 import (
+	"httpfromtcp/internal/headers"
 	"httpfromtcp/internal/request"
 	"httpfromtcp/internal/response"
 	"httpfromtcp/internal/server"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -23,6 +26,7 @@ func response400() []byte {
   </body>
 </html>`)
 }
+
 func response500() []byte {
 	return []byte(`<html>
   <head>
@@ -34,6 +38,7 @@ func response500() []byte {
   </body>
 </html>`)
 }
+
 func response200() []byte {
 	return []byte(`<html>
   <head>
@@ -53,7 +58,7 @@ func writeResponse(w *response.Writer, code response.StatusCode, body []byte) {
 	if err := w.WriteHeaders(response.GetDefaultHeaders(len(body))); err != nil {
 		log.Printf("error writing the headers to the connection: %v\n", err)
 	}
-	if _, err := w.WriteBody(body); err != nil {
+	if _, err := w.Write(body); err != nil {
 		log.Printf("error writing the body to the connection: %v\n", err)
 	}
 
@@ -62,19 +67,53 @@ func writeResponse(w *response.Writer, code response.StatusCode, body []byte) {
 func Handler(w *response.Writer, r *request.Request) {
 
 	switch r.RequestLine.RequestTarget {
+
 	case "/yourproblem":
 		writeResponse(w, response.StatusBadRequest, response400())
-
 	case "/myproblem":
 		writeResponse(w, response.StatusInternalServerError, response500())
-
 	default:
-		writeResponse(w, response.StatusOK, response200())
+		if strings.HasPrefix(r.RequestLine.RequestTarget, "/httpbin/") {
+			path := strings.TrimPrefix(r.RequestLine.RequestTarget, "/httpbin/")
+			proxyHandler(w, path)
+		} else {
+			writeResponse(w, response.StatusOK, response200())
+		}
 
+	}
+
+}
+
+func proxyHandler(w *response.Writer, path string) {
+
+	hdr := headers.NewHeaders()
+
+	res, err := http.Get("https://httpbin.org/" + path)
+	if err != nil {
+		writeResponse(w, response.StatusInternalServerError, response500())
+	} else {
+		w.WriteStatusLine(response.StatusOK)
+		w.WriteHeaders(response.GetDefaultHeaders(0))
+
+		hdr.Delete("Content-Length")
+		hdr.Set("Transfer-Encoding", "chunked")
+		hdr.Replace("Content-Type", "text/plain")
+
+		for {
+			data := make([]byte, 30)
+			n, err := res.Body.Read(data)
+			if err != nil {
+				break
+			}
+			w.WriteChunkedBody(data[:n])
+		}
+		w.WriteChunkedBodyDone()
+		return
 	}
 }
 
 func main() {
+
 	server, err := server.Serve(port, Handler)
 	if err != nil {
 		log.Printf("error starting the server: %v\n", err)

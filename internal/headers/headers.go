@@ -117,3 +117,12 @@ func (h HTTPHeaders) Get(name string) string {
 func (h HTTPHeaders) Set(name string, val string) {
 	h.HeadersMap[strings.ToLower(name)] = val
 }
+
+func (h HTTPHeaders) Replace(name string, val string) {
+	h.HeadersMap[strings.ToLower(name)] = val
+}
+
+func (h HTTPHeaders) Delete(name string) {
+	name = strings.ToLower(name)
+	delete(h.HeadersMap, name)
+}

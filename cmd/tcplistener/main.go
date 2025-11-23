@@ -21,9 +21,6 @@ func MUST[T any](arg T, err error) T {
 func main() {
 
 	ln := MUST(net.Listen("tcp", ListenAddr))
-	// if err != nil {
-	// 	log.Printf("error listening for TCP traffic: %s\n", err.Error())
-	// }
 
 	defer func() {
 		if err := ln.Close(); err != nil {
@@ -33,16 +30,11 @@ func main() {
 
 	for {
 		conn := MUST(ln.Accept())
-		// if err != nil {
-		// 	log.Printf("error connecting to the TCP listener: %s\n", err.Error())
-		// }
 
 		fmt.Println("Accepted the TCP connection from", conn.RemoteAddr())
 
 		r := MUST(request.RequestFromReader(conn))
-		// if err != nil {
-		// 	log.Println("Error parsing request:", err)
-		// }
+
 		fmt.Printf("Request line:\n")
 		fmt.Printf("- Method: %s\n", r.RequestLine.Method)
 		fmt.Printf("- Target: %s\n", r.RequestLine.RequestTarget)
@@ -52,7 +44,6 @@ func main() {
 			fmt.Println("-", key, ":", val)
 		}
 		fmt.Printf("- Body: %s\n", string(r.Body))
-
 		fmt.Println("Connection to ", conn.RemoteAddr(), "closed")
 
 	}

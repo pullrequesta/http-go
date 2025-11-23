@@ -14,6 +14,7 @@ const address = ":42069"
 func IsNewLine(r rune) bool {
 	return r == '\n'
 }
+
 func MUST[T any](x T, err error) T {
 	if err != nil {
 		log.Fatal(err)
