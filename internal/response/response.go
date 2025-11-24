@@ -30,12 +30,18 @@ func (w *Writer) Write(p []byte) (int, error) {
 	return w.Writer.Write(p)
 }
 
-// see [rfc 9112 4 status-line](https://datatracker.ietf.org/doc/html/rfc9112#name-message-format)
-// status-line = HTTP-version SP status-code SP [ reason-phrase ]
-// HTTP-version = HTTP-name "/" DIGIT "." DIGIT
-// HTTP-name = %x48.54.54.50 ; HTTP
-// status-code = 3DIGIT
-// reason-phrase = 1*( HTAB / SP / VCHAR / obs-text )
+// WriteStatusLine builds and writes the status line based on the
+// statusCode provided, returns error if any
+//
+// The [RFC 9112 Section 4] defines status-line as:
+//
+//	status-line = HTTP-version SP status-code SP [ reason-phrase ]
+//	HTTP-version = HTTP-name "/" DIGIT "." DIGIT
+//	HTTP-name = %x48.54.54.50 ; HTTP
+//	status-code = 3DIGIT
+//	reason-phrase = 1*( HTAB / SP / VCHAR / obs-text )
+//
+// [RFC 9112 Section 4]: https://datatracker.ietf.org/doc/html/rfc9112#name-message-format
 func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 
 	var reasonPhrase string
@@ -57,6 +63,12 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 
 }
 
+// WriteHeaders writes [headers.HTTPHeaders] in http format,
+// returns error if any.
+//
+// The http format is as follows:
+//
+//	field-name: value\r\n
 func (w *Writer) WriteHeaders(headers headers.HTTPHeaders) error {
 	hdrs := []byte{}
 
@@ -70,6 +82,10 @@ func (w *Writer) WriteHeaders(headers headers.HTTPHeaders) error {
 
 }
 
+// WriteChunkedBody writes the body in chunks,
+// returns the number of bytes written and error if any.
+//
+// see also [WriteChunkedBodyDone]
 func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
 	var err error
 	trimmed, _ := bytes.CutSuffix(p, []byte("\n"))
@@ -90,19 +106,29 @@ func (w *Writer) WriteChunkedBody(p []byte) (int, error) {
 
 }
 
+// WriteChunkedBodyDone writes the "0\r\n\r\n",
+// returns the number of bytes written and error if any.
+//
+// see also [WriteChunkedBody]
 func (w *Writer) WriteChunkedBodyDone() (int, error) {
 	return w.Write([]byte("0\r\n\r\n"))
 
 }
 
+// GetDefaultHeaders creates new default headers and
+// returns [headers.HTTPHeaders] them based on the
+// content length provided
+//
+// It creates the following headers:
+//   - Content-Length: [contentLen]
+//   - Connection: close
+//   - Content-Type: text/html
 func GetDefaultHeaders(contentLen int) headers.HTTPHeaders {
 	hdr := headers.NewHeaders()
 
 	contentlength := strconv.Itoa(contentLen)
 	hdr.Set("Content-Length", contentlength)
-
 	hdr.Set("Connection", "close")
 	hdr.Set("Content-Type", "text/html")
-
 	return hdr
 }

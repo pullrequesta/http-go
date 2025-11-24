@@ -63,10 +63,8 @@ func NewRequest() *Request {
 	}
 }
 
-func (r *Request) GetHTTPVersion() string {
-	return r.RequestLine.HttpVersion
-}
-
+// RequestFromReader parses the request from [io.Reader] and
+// returns [Request], error if any
 func RequestFromReader(reader io.Reader) (*Request, error) {
 	buff := make([]byte, bufferSize)
 	readToIndex := 0
@@ -197,19 +195,25 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 	}
 }
 
-// see [rfc 9112 3.1 Request Line](https://datatracker.ietf.org/doc/html/rfc9112#name-message-format)
-// request-line   = method SP request-target SP HTTP-version
-// method         = token
+// parseRequestLine parses the request line according to [RFC 9112 Section 3.1]
+// provided as a string input, returns [*RequestLine], number of characters parsed
+// and error if any.
 //
+// If the string input is an incomplete header, (nil, 0, nil) is returned
+// indicating that the function requires more input.
+//
+// The [RFC 9112 Section 3.1] describes request-line as follows:
+//
+//	request-line   = method SP request-target SP HTTP-version
+//	method         = token
 //	request-target = origin-form
 //	               / absolute-form
 //	               / authority-form
 //	               / asterisk-form
-//
-// HTTP-name = %x48.54.54.50 ; HTTP
-//
 //	HTTP-version  = HTTP-name "/" DIGIT "." DIGIT
 //	HTTP-name     = %s"HTTP"
+//
+// [RFC 9112 Section 3.1]: https://datatracker.ietf.org/doc/html/rfc9112#name-message-format
 func parseRequestLine(s string) (*RequestLine, int, error) {
 	if len(s) == 0 {
 		return nil, 0, errors.New("empty request line received")
@@ -246,7 +250,7 @@ func parseRequestLine(s string) (*RequestLine, int, error) {
 
 }
 
-// isMethod checks whether the given request method is case-sensitive.
+// isMethod checks whether the given request method is case-sensitive and alphabetic.
 func isMethod(m string) bool {
 	for _, v := range m {
 		if !unicode.IsUpper(v) && unicode.IsLetter(v) {

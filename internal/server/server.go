@@ -89,7 +89,6 @@ func (s *Server) handleConn(rwc io.ReadWriteCloser) {
 	if err != nil {
 		log.Printf("error parsing request: %v", err)
 	}
-	// print the request on the server
 	fmt.Printf("Request line:\n")
 	fmt.Printf("- Method: %s\n", r.RequestLine.Method)
 	fmt.Printf("- Target: %s\n", r.RequestLine.RequestTarget)
@@ -101,12 +100,6 @@ func (s *Server) handleConn(rwc io.ReadWriteCloser) {
 	fmt.Printf("- Body: %s\n", string(r.Body))
 
 	responseWriter := response.NewWriter(rwc)
-
-	// n, err := responseWriter.WriteChunkedBody([]byte("Welcome"))
-	// if err != nil {
-	// 	fmt.Printf("%v", err)
-	// }
-	// fmt.Println(n)
 
 	//create a handler function to write the response
 	s.handler(responseWriter, r)

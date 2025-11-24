@@ -25,15 +25,11 @@ func MUST[T any](x T, err error) T {
 func main() {
 
 	raddr := MUST(net.ResolveUDPAddr("udp", address))
-	// if err != nil {
-	// 	log.Printf("error listening for UDP traffic: %s\n", err.Error())
-	// }
+
 	fmt.Println("UDP address:", raddr)
 
 	conn := MUST(net.DialUDP("udp", nil, raddr))
-	// if err != nil {
-	// 	log.Printf("error%s\n", err.Error())
-	// }
+
 	defer func() {
 		if err := conn.Close(); err != nil {
 			log.Printf("error closing UDP connection: %v", err)

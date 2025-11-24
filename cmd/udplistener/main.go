@@ -18,6 +18,7 @@ func MUST[T any](x T, err error) T {
 }
 
 func main() {
+
 	fmt.Println("starting udp server")
 	addr := MUST(net.ResolveUDPAddr("udp", address))
 	conn := MUST(net.ListenUDP("udp", addr))

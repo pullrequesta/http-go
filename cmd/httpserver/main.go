@@ -92,8 +92,13 @@ func proxyHandler(w *response.Writer, path string) {
 	if err != nil {
 		writeResponse(w, response.StatusInternalServerError, response500())
 	} else {
-		w.WriteStatusLine(response.StatusOK)
-		w.WriteHeaders(response.GetDefaultHeaders(0))
+		if err := w.WriteStatusLine(response.StatusOK); err != nil {
+			log.Printf("error writing the status-line to the connection: %v\n", err)
+		}
+
+		if err := w.WriteHeaders(response.GetDefaultHeaders(0)); err != nil {
+			log.Printf("error writing the headers to the connection: %v\n", err)
+		}
 
 		hdr.Delete("Content-Length")
 		hdr.Set("Transfer-Encoding", "chunked")
@@ -105,9 +110,15 @@ func proxyHandler(w *response.Writer, path string) {
 			if err != nil {
 				break
 			}
-			w.WriteChunkedBody(data[:n])
+			if _, err := w.WriteChunkedBody(data[:n]); err != nil {
+				log.Printf("error writing the chunked body to the connection: %v\n", err)
+			}
+
 		}
-		w.WriteChunkedBodyDone()
+		if _, err := w.WriteChunkedBodyDone(); err != nil {
+			log.Printf("error writing the end of chunked body to the connection: %v\n", err)
+		}
+
 		return
 	}
 }
