@@ -51,7 +51,7 @@ func (h HTTPHeaders) Parse(data []byte) (int, bool, error) {
 // parsing completion and error if any.
 //
 // If the string input is an incomplete header, (0, false, nil) is returned
-// indicating that the function requires more input.
+// indicating that the function requires more data.
 //
 // The [RFC 9112 5 field-line] is as follows:
 //
