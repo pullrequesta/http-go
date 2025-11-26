@@ -9,12 +9,9 @@ import (
 	"net"
 )
 
-type ServerState int
-
 type Server struct {
 	listener net.Listener
 	handler  func(w *response.Writer, r *request.Request)
-	State    ServerState
 	doneCh   chan bool
 }
 
@@ -29,12 +26,16 @@ func (e HandlerError) Error() string {
 	return fmt.Sprintf("%d %s\n", e.StatusCode, e.Message)
 }
 
+func MUST[T any](x T, err error) T {
+	if err != nil {
+		log.Fatal(err)
+	}
+	return x
+}
+
 func Serve(port int, hf Handler) (*Server, error) {
 
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		return nil, err
-	}
+	ln := MUST(net.Listen("tcp", fmt.Sprintf(":%d", port)))
 
 	server := &Server{
 		listener: ln,
@@ -57,10 +58,7 @@ func (s *Server) listen() {
 		// 	return
 		// default:
 		// Wait for a connection.
-		conn, err := s.listener.Accept()
-		if err != nil {
-			log.Printf("error connecting to the TCP listener: %v\n", err)
-		}
+		conn := MUST(s.listener.Accept())
 
 		fmt.Printf("accepted the TCP connection from: %d", conn.RemoteAddr())
 
