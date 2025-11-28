@@ -15,7 +15,7 @@ func IsNewLine(r rune) bool {
 	return r == '\n'
 }
 
-func MUST[T any](x T, err error) T {
+func Must[T any](x T, err error) T {
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,11 +24,11 @@ func MUST[T any](x T, err error) T {
 
 func main() {
 
-	raddr := MUST(net.ResolveUDPAddr("udp", address))
+	raddr := Must(net.ResolveUDPAddr("udp", address))
 
 	fmt.Println("UDP address:", raddr)
 
-	conn := MUST(net.DialUDP("udp", nil, raddr))
+	conn := Must(net.DialUDP("udp", nil, raddr))
 
 	defer func() {
 		if err := conn.Close(); err != nil {

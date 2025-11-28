@@ -10,7 +10,7 @@ import (
 const address = ":42069"
 const bufSize = 1024
 
-func MUST[T any](x T, err error) T {
+func Must[T any](x T, err error) T {
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -20,8 +20,8 @@ func MUST[T any](x T, err error) T {
 func main() {
 
 	fmt.Println("starting udp server")
-	addr := MUST(net.ResolveUDPAddr("udp", address))
-	conn := MUST(net.ListenUDP("udp", addr))
+	addr := Must(net.ResolveUDPAddr("udp", address))
+	conn := Must(net.ListenUDP("udp", addr))
 
 	defer func() {
 		err := conn.Close()
