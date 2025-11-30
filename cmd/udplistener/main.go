@@ -26,7 +26,7 @@ func main() {
 	defer func() {
 		err := conn.Close()
 		if err != nil {
-			fmt.Println(err)
+			log.Printf("error closing UDP connection: %v", err)
 		}
 	}()
 

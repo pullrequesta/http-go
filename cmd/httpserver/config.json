@@ -1,0 +1,4 @@
+{
+    "protocol": "tcp",
+    "address": ":42069"
+}

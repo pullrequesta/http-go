@@ -2,6 +2,7 @@ package request
 
 import (
 	"errors"
+	"fmt"
 	"httpfromtcp/internal/headers"
 	"io"
 	"strconv"
@@ -47,6 +48,28 @@ type RequestLine struct {
 	HttpVersion   string
 }
 
+func (r RequestLine) String() string {
+	var b strings.Builder
+	if r.Method != "" {
+		b.WriteString(r.Method + " ")
+	}
+	if r.RequestTarget != "" {
+		b.WriteString(r.RequestTarget + " ")
+	}
+	if r.HttpVersion != "" {
+		b.WriteString("HTTP/" + r.HttpVersion + crlf)
+	}
+	return b.String()
+}
+
+func newRequestLine(method, target string) *RequestLine {
+	return &RequestLine{
+		Method:        method,
+		RequestTarget: target,
+		HttpVersion:   "1.1",
+	}
+}
+
 type errReqLine struct {
 	Err   error
 	Value string
@@ -56,11 +79,39 @@ func (e *errReqLine) Error() string {
 	return "Err: " + e.Err.Error() + ", for value [" + e.Value + "]"
 }
 
-func NewRequest() *Request {
+func NewRequest(method string, target string) *Request {
 	return &Request{
-		State:   initialState,
-		Headers: headers.NewHeaders(),
+		RequestLine: *newRequestLine(method, target),
+		State:       doneState,
+		Headers:     headers.NewHeaders(),
 	}
+}
+
+func (r *Request) String() string {
+
+	builder := strings.Builder{}
+
+	builder.WriteString(r.RequestLine.String())
+
+	if r.Headers.HeadersMap != nil {
+		for k, v := range r.Headers.HeadersMap {
+			builder.WriteString(k + ": " + v + crlf)
+		}
+	}
+
+	builder.WriteString(crlf)
+
+	if r.Body != nil {
+		builder.WriteString(string(r.Body) + crlf)
+	}
+	return builder.String()
+
+}
+
+func (r *Request) SetBody(body []byte, contentType string) {
+	r.Body = body
+	r.Headers.Set("Content-Length", fmt.Sprintf("%d", len(body)+len(crlf)))
+	r.Headers.Set("Content-Type", contentType)
 }
 
 // RequestFromReader parses the request from [io.Reader] and
@@ -69,11 +120,15 @@ func RequestFromReader(reader io.Reader) (*Request, error) {
 	buff := make([]byte, bufferSize)
 	readToIndex := 0
 
-	r := NewRequest()
+	r := &Request{
+		State:   initialState,
+		Headers: headers.NewHeaders(),
+	}
 
 	for r.State != doneState {
 		// read into the buffer
 		numBytesRead, err := reader.Read(buff[readToIndex:])
+		// log.Printf("buff %v\n", string(buff[:numBytesRead]))
 		if err == io.EOF {
 			r.State = doneState
 			break
@@ -144,7 +199,6 @@ func (r *Request) parse(data []byte) (int, error) {
 	}
 
 	return totalBytesParsed, nil
-
 }
 
 func (r *Request) parseSingle(data []byte) (int, error) {
@@ -187,6 +241,7 @@ func (r *Request) parseSingle(data []byte) (int, error) {
 		}
 
 		return len(data), nil
+		// A Builder is used to efficientl
 	case doneState:
 		return 0, errors.New("trying to read data in a done state")
 	default:

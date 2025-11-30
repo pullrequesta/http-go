@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"httpfromtcp/internal/headers"
 	"httpfromtcp/internal/request"
 	"httpfromtcp/internal/response"
@@ -11,9 +12,9 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-)
 
-const port int = 42069
+	"github.com/spf13/viper"
+)
 
 func response400() []byte {
 	return []byte(`<html>
@@ -123,20 +124,45 @@ func proxyHandler(w *response.Writer, path string) {
 	}
 }
 
-func main() {
-
-	server, err := server.Serve(port, Handler)
+// readConfig reads the config and loads the data
+// accessible by viper
+func readConfig() {
+	viper.AddConfigPath(".")
+	viper.SetConfigName("config")
+	viper.SetConfigType("json")
+	err := viper.ReadInConfig()
 	if err != nil {
+		panic(fmt.Errorf("fatal error config file: %w", err))
+	}
+}
+
+func main() {
+	readConfig()
+	proto := viper.GetString("protocol")
+	addr := viper.GetString("address")
+
+	var srv *server.Server
+	switch strings.ToLower(proto) {
+	case "udp":
+		srv = server.NewServer(server.WithUDP(), server.WithAddr(addr))
+	case "tcp":
+		srv = server.NewServer(server.WithAddr(addr))
+	default:
+		log.Fatal("You must provid a valid transport protocol. see --help")
+
+	}
+
+	if err := srv.Serve(Handler); err != nil {
 		log.Printf("error starting the server: %v\n", err)
 	}
 
 	defer func() {
-		if err := server.Close(); err != nil {
+		if err := srv.Close(); err != nil {
 			log.Printf("error closing the server: %v\n", err)
 		}
 	}()
 
-	log.Println("server started on port:", port)
+	log.Println("server started on", srv.Address())
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
