@@ -1,4 +1,4 @@
-package headers
+package internal
 
 import (
 	"fmt"
@@ -61,7 +61,26 @@ func TestParseHeaderLine(t *testing.T) {
 		for key := range tc.expected.HeadersMap {
 			assert.Equal(t, tc.expected.HeadersMap[key], hdr.Get(key))
 		}
+	}
 
+}
+func TestToTitleCase(t *testing.T) {
+	testCases := []struct {
+		input    string
+		expected string
+	}{
+		{"host", "Host"},
+		{"hOSt", "Host"},
+		{"HosT", "Host"},
+		{"Host", "Host"},
+		{"x-auth-token", "X-Auth-Token"},
+		{"x-auth-TOKEN", "X-Auth-Token"},
+		{"content-length", "Content-Length"},
+	}
+
+	for _, tc := range testCases {
+		got := titleCase(tc.input)
+		assert.Equal(t, got, tc.expected)
 	}
 
 }

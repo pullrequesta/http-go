@@ -32,3 +32,6 @@ notes.txt
 # Editor/IDE
 # .idea/
 # .vscode/
+
+httpclient
+httpserver

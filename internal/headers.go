@@ -1,11 +1,12 @@
-package headers
+package internal
 
 import (
 	"errors"
 	"strings"
-)
 
-const crlf string = "\r\n"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+)
 
 type HTTPHeaders struct {
 	HeadersMap map[string]string
@@ -83,7 +84,7 @@ func (h HTTPHeaders) parseHeaderLine(s string) (n int, done bool, err error) {
 	if len(s) == 0 {
 		return 0, false, errors.New("empty header line received")
 	}
-	idx := strings.Index(s, crlf)
+	idx := strings.Index(s, CRLFDELIMETER)
 	if idx == -1 {
 		return 0, false, nil
 	}
@@ -91,14 +92,14 @@ func (h HTTPHeaders) parseHeaderLine(s string) (n int, done bool, err error) {
 		return 0, true, nil
 	}
 
-	consumed := idx + len(crlf)
+	consumed := idx + len(CRLFDELIMETER)
 
 	key, val, found := strings.Cut(string(s[:idx]), ":")
 	if !found || len(key) == 0 || !isToken(key) {
 		return 0, false, errors.New("malformed header received")
 	}
 
-	key = strings.ToLower(key)
+	key = titleCase(key)
 	v, exists := h.HeadersMap[key]
 	if exists {
 		h.HeadersMap[key] = v + "," + strings.TrimSpace(val)
@@ -106,14 +107,21 @@ func (h HTTPHeaders) parseHeaderLine(s string) (n int, done bool, err error) {
 		h.HeadersMap[key] = strings.TrimSpace(val)
 
 	}
-
 	return consumed, false, nil
-
 }
 
-// Get returns the value of a header by name.
+func titleCase(n string) string {
+	if n == "" {
+		return ""
+	}
+	title := cases.Title(language.English).String(n)
+	return title
+}
+
+// Get converts the header name to lower-case, and
+// returns the value of that header by its name.
 func (h HTTPHeaders) Get(name string) string {
-	val, exists := h.HeadersMap[strings.ToLower(name)]
+	val, exists := h.HeadersMap[titleCase(name)]
 	if !exists {
 		return ""
 	}
@@ -122,18 +130,17 @@ func (h HTTPHeaders) Get(name string) string {
 
 // Set sets or overwrites a header with the given value.
 func (h HTTPHeaders) Set(name string, val string) {
-	h.HeadersMap[strings.ToLower(name)] = val
+	h.HeadersMap[titleCase(name)] = val
 }
 
 // Replace updates the value of a header, assuming it already exists.
 func (h HTTPHeaders) Replace(name string, val string) {
-	h.HeadersMap[strings.ToLower(name)] = val
+	h.HeadersMap[titleCase(name)] = val
 }
 
 // Delete removes the header by the given header name.
 func (h HTTPHeaders) Delete(name string) {
-	name = strings.ToLower(name)
-	delete(h.HeadersMap, name)
+	delete(h.HeadersMap, titleCase(name))
 }
 
 // isToken checks whether a given string is Token.

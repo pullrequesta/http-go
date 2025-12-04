@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"httpfromtcp/internal/request"
+	"httpfromtcp/internal"
 	"log"
 	"net"
 )
@@ -10,7 +10,6 @@ import (
 const ListenAddr string = ":42069"
 
 // Must helper function
-
 func MUST[T any](arg T, err error) T {
 	if err != nil {
 		log.Fatal(err)
@@ -33,7 +32,12 @@ func main() {
 
 		fmt.Println("Accepted the TCP connection from", conn.RemoteAddr())
 
-		r := MUST(request.RequestFromReader(conn))
+		msg := MUST(internal.MessageFromReader(conn))
+		r, ok := msg.(*internal.Request)
+		if !ok {
+			log.Println("Did not receive request!")
+			continue
+		}
 
 		fmt.Printf("Request line:\n")
 		fmt.Printf("- Method: %s\n", r.RequestLine.Method)

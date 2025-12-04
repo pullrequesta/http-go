@@ -2,9 +2,7 @@ package main
 
 import (
 	"fmt"
-	"httpfromtcp/internal/headers"
-	"httpfromtcp/internal/request"
-	"httpfromtcp/internal/response"
+	"httpfromtcp/internal"
 	"httpfromtcp/internal/server"
 	"log"
 	"net/http"
@@ -52,11 +50,31 @@ func response200() []byte {
 </html>`)
 }
 
-func writeResponse(w *response.Writer, code response.StatusCode, body []byte) {
+func Handler(w *internal.ResponseWriter, r *internal.Request) {
+
+	switch r.RequestLine.RequestTarget {
+
+	case "/yourproblem":
+		writeResponse(w, internal.StatusBadRequest, response400())
+	case "/myproblem":
+		writeResponse(w, internal.StatusInternalServerError, response500())
+	default:
+		if strings.HasPrefix(r.RequestLine.RequestTarget, "/httpbin/") {
+			path := strings.TrimPrefix(r.RequestLine.RequestTarget, "/httpbin/")
+			proxyHandler(w, path)
+		} else {
+			writeResponse(w, internal.StatusOK, response200())
+		}
+
+	}
+
+}
+
+func writeResponse(w *internal.ResponseWriter, code internal.HTTPStatusCode, body []byte) {
 	if err := w.WriteStatusLine(code); err != nil {
 		log.Printf("error writing the status-line to the connection: %v\n", err)
 	}
-	if err := w.WriteHeaders(response.GetDefaultHeaders(len(body))); err != nil {
+	if err := w.WriteHeaders(internal.GetDefaultHeaders(len(body))); err != nil {
 		log.Printf("error writing the headers to the connection: %v\n", err)
 	}
 	if _, err := w.Write(body); err != nil {
@@ -65,39 +83,19 @@ func writeResponse(w *response.Writer, code response.StatusCode, body []byte) {
 
 }
 
-func Handler(w *response.Writer, r *request.Request) {
+func proxyHandler(w *internal.ResponseWriter, path string) {
 
-	switch r.RequestLine.RequestTarget {
-
-	case "/yourproblem":
-		writeResponse(w, response.StatusBadRequest, response400())
-	case "/myproblem":
-		writeResponse(w, response.StatusInternalServerError, response500())
-	default:
-		if strings.HasPrefix(r.RequestLine.RequestTarget, "/httpbin/") {
-			path := strings.TrimPrefix(r.RequestLine.RequestTarget, "/httpbin/")
-			proxyHandler(w, path)
-		} else {
-			writeResponse(w, response.StatusOK, response200())
-		}
-
-	}
-
-}
-
-func proxyHandler(w *response.Writer, path string) {
-
-	hdr := headers.NewHeaders()
+	hdr := internal.NewHeaders()
 
 	res, err := http.Get("https://httpbin.org/" + path)
 	if err != nil {
-		writeResponse(w, response.StatusInternalServerError, response500())
+		writeResponse(w, internal.StatusInternalServerError, response500())
 	} else {
-		if err := w.WriteStatusLine(response.StatusOK); err != nil {
+		if err := w.WriteStatusLine(internal.StatusOK); err != nil {
 			log.Printf("error writing the status-line to the connection: %v\n", err)
 		}
 
-		if err := w.WriteHeaders(response.GetDefaultHeaders(0)); err != nil {
+		if err := w.WriteHeaders(internal.GetDefaultHeaders(0)); err != nil {
 			log.Printf("error writing the headers to the connection: %v\n", err)
 		}
 
@@ -114,7 +112,6 @@ func proxyHandler(w *response.Writer, path string) {
 			if _, err := w.WriteChunkedBody(data[:n]); err != nil {
 				log.Printf("error writing the chunked body to the connection: %v\n", err)
 			}
-
 		}
 		if _, err := w.WriteChunkedBodyDone(); err != nil {
 			log.Printf("error writing the end of chunked body to the connection: %v\n", err)

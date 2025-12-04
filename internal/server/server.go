@@ -2,17 +2,16 @@ package server
 
 import (
 	"fmt"
-	"httpfromtcp/internal/request"
-	"httpfromtcp/internal/response"
+	"httpfromtcp/internal"
 	"io"
 	"log"
 	"net"
 )
 
-type Handler func(w *response.Writer, r *request.Request)
+type Handler func(w *internal.ResponseWriter, r *internal.Request)
 
 type HandlerError struct {
-	StatusCode response.StatusCode
+	StatusCode internal.HTTPStatusCode
 	Message    string
 }
 
@@ -42,7 +41,7 @@ type ServerOptions struct {
 type Server struct {
 	opts     *ServerOptions
 	listener net.Listener
-	handler  func(w *response.Writer, r *request.Request)
+	handler  func(w *internal.ResponseWriter, r *internal.Request)
 	doneCh   chan bool
 }
 
@@ -147,9 +146,15 @@ func (s *Server) handleConn(rwc io.ReadWriteCloser) {
 	}()
 
 	// parse the request from the connection.
-	r, err := request.RequestFromReader(rwc)
+	msg, err := internal.MessageFromReader(rwc)
 	if err != nil {
 		log.Printf("error parsing request: %v", err)
+		return
+	}
+	r, ok := msg.(*internal.Request)
+	if !ok {
+		log.Println("error converting http message to request")
+		return
 	}
 	fmt.Printf("Request line:\n")
 	fmt.Printf("- Method: %s\n", r.RequestLine.Method)
@@ -161,7 +166,7 @@ func (s *Server) handleConn(rwc io.ReadWriteCloser) {
 	}
 	fmt.Printf("- Body: %s\n", string(r.Body))
 
-	responseWriter := response.NewWriter(rwc)
+	responseWriter := internal.NewResponseWriter(rwc)
 
 	s.handler(responseWriter, r)
 

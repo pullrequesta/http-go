@@ -3,15 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"httpfromtcp/internal/request"
+	"httpfromtcp/internal"
+
 	"log"
 	"net"
 	"strings"
 )
-
-func IsNewLine(r rune) bool {
-	return r == '\n'
-}
 
 func Must[T any](x T, err error) T {
 	if err != nil {
@@ -26,11 +23,11 @@ func main() {
 	flag.Parse()
 
 	var connection net.Conn
+
 	switch strings.ToLower(*proto) {
 
 	case "tcp":
 		connection = Must(net.Dial("tcp", *addr))
-
 	case "udp":
 		raddr := Must(net.ResolveUDPAddr("udp", *addr))
 		fmt.Println("UDP address:", raddr)
@@ -44,22 +41,29 @@ func main() {
 		}
 	}()
 
-	r := request.NewRequest("GET", "/yourproblem")
+	r := internal.NewRequest("GET", "/yourproblem")
 	r.SetBody([]byte("Welcome"), "plain/text")
 	n, err := connection.Write([]byte(r.String()))
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Printf("Written %d to %s\n", n, connection.RemoteAddr().String())
-	buf := make([]byte, 8024)
-	for {
-		n, err = connection.Read(buf)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if n == 0 {
-			continue
-		}
-		log.Printf("Server sent back response %v", string(buf[:n]))
+	msg, err := internal.MessageFromReader(connection)
+	if err != nil {
+		log.Printf("error parsing response: %v", err)
+		return
 	}
+	resp, ok := msg.(*internal.Response)
+	if !ok {
+		log.Println("error converting http message to response")
+		return
+	}
+	fmt.Println("Server returned response")
+	fmt.Printf("- Status Code: %d\n", resp.ResponseLine.StatusCode)
+	fmt.Printf("- Reason: %s\n", resp.ResponseLine.ReasonPhrase)
+	for k, v := range resp.Headers.HeadersMap {
+		fmt.Printf("- %s: %s\n", k, v)
+	}
+	fmt.Printf("- Body: %s\n", string(resp.GetBody()))
+
 }
