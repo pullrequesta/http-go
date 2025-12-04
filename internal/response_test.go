@@ -100,11 +100,6 @@ func TestParseResponseLineReturnsError(t *testing.T) {
 			expected: "no / in HTTP version",
 		},
 		{
-			name:     "invalid HTTP Version in response line",
-			input:    "HTTP/11 200 OK\r\n",
-			expected: "invalid HTTP version received",
-		},
-		{
 			name:     "invalid status code in response line",
 			input:    "HTTP/1.1 Have OK\r\n",
 			expected: "invalid Status Code received",

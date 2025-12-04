@@ -45,7 +45,7 @@ type Server struct {
 	doneCh   chan bool
 }
 
-func defaultServerOptions() *ServerOptions {
+func DefaultServerOptions() *ServerOptions {
 	return &ServerOptions{
 		proto: PROTO_TCP,
 		addr:  ":42069",
@@ -76,7 +76,7 @@ func WithAddr(addr string) ServerOption {
 // If no options are provided proto "tcp" will be used
 // and default address ":42069" will be used.
 func NewServer(opts ...ServerOption) *Server {
-	o := defaultServerOptions()
+	o := DefaultServerOptions()
 	for _, opt := range opts {
 		opt(o)
 	}
@@ -111,13 +111,18 @@ func (s *Server) Serve(hf Handler) error {
 }
 
 func (s *Server) TCPlisten() {
-
+	defer func() {
+		if err := s.listener.Close(); err != nil {
+			log.Printf("error closing the listener: %v", err)
+		}
+	}()
 	for {
 		conn := Must(s.listener.Accept())
 		fmt.Printf("accepted the TCP connection from: %d", conn.RemoteAddr())
 
 		go s.handleConn(conn)
 	}
+
 }
 
 func (s *Server) UDPlisten() {
@@ -156,15 +161,6 @@ func (s *Server) handleConn(rwc io.ReadWriteCloser) {
 		log.Println("error converting http message to request")
 		return
 	}
-	fmt.Printf("Request line:\n")
-	fmt.Printf("- Method: %s\n", r.RequestLine.Method)
-	fmt.Printf("- Target: %s\n", r.RequestLine.RequestTarget)
-	fmt.Printf("- Version: %s\n", r.RequestLine.HttpVersion)
-	fmt.Printf("Headers:\n")
-	for key, val := range r.Headers.HeadersMap {
-		fmt.Println("-", key, ":", val)
-	}
-	fmt.Printf("- Body: %s\n", string(r.Body))
 
 	responseWriter := internal.NewResponseWriter(rwc)
 
@@ -173,9 +169,6 @@ func (s *Server) handleConn(rwc io.ReadWriteCloser) {
 }
 
 func (s *Server) Close() error {
-	if err := s.listener.Close(); err != nil {
-		log.Printf("error closing the listener: %v", err)
-	}
 	return nil
 
 }
