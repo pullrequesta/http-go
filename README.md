@@ -12,12 +12,15 @@ The library also supports proxy requests.
 ```zsh
 http-go/
  ├── cmd/httpserver/
- │    └── main.go      # Entry point for running the HTTP server
- │── internal/
- │    ├── headers/     # Creates the gerneric header map for parsing the headers
- │    ├── request/     # Parses the request, headers, and the message body
- │    ├── response/    # Writes the response, performing chunked encoding
- │    └── server/      # Listener, connection loop, handler dispatch
+ │    └── main.go         # Entry point for running the HTTP server
+ │── internal/ 
+ │    ├── server/         # Listens, connection loop, handler dispatch
+ │    ├── constants.go    # Contains the definition of consants used for the internal package
+ │    ├── headers.go      # Creates the generic header map for parsing the headers
+ │    ├── http_message.go # Creates an interface for the HTTP message, reads the HTTP message
+ │    ├── parser.go       # Parses the HTTP message based on the state of the parser
+ │    ├── request.go      # Parses the request
+ │    ├── response.go     # Parses the response, writes the response and performes chunked encoding
  └── README.md
 ```
 
